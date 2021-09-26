@@ -6859,3 +6859,11 @@ export function checkTheStatusOfTheSelectedCells(type,status){
 
     return flag;
 }
+
+/**
+ * 应用sheet操作, 通常来自websocket, 用于协同
+ * @param {Object}  data   数据
+ */
+export function applyOp(data){
+    return server.applyOp(data)
+}

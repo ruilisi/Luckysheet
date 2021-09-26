@@ -148,11 +148,7 @@ const server = {
         const customImageUpdateMethodConfig = luckysheetConfigsetting.imageUpdateMethodConfig
 		if (JSON.stringify(customImageUpdateMethodConfig) !== "{}") {
             if ("images" != d.k) {
-                let msg = pako.gzip(encodeURIComponent(JSON.stringify(d)), {to: "string"});
-
-                if (_this.websocket != null) {
-                    _this.websocket.send(msg);
-                }
+		method.createHookFunction('op', d)
             } else {
                 customImageUpdate(customImageUpdateMethodConfig.method, customImageUpdateMethodConfig.url, d)
                     .then((data) => {
@@ -164,221 +160,208 @@ const server = {
 
             }
         } else {
-            let msg = pako.gzip(encodeURIComponent(JSON.stringify(d)), {to: "string"});
-            if (_this.websocket != null) {
-                _this.websocket.send(msg);
-            }
+	    method.createHookFunction('op', d)
         }
 
 	},
-    websocket: null,
-    wxErrorCount: 0,
-    openWebSocket: function(){
-        let _this = this;
+    applyOp: function(data) {
+	let _this = this;
+	let type = data.type;
+	if (type == 1) {
+	  //send 成功或失败
+	  const oldIndex = data.data.v.index;
+	  const sheetToUpdate = Store.luckysheetfile.filter(
+	    (sheet) => sheet.index === oldIndex
+	  )[0];
+	  if (sheetToUpdate !== null) {
+	    setTimeout(() => {
+	      const index = data.data.i;
+	      sheetToUpdate.index = index;
+	      Store.currentSheetIndex = index;
 
-        if('WebSocket' in window){
-			let wxUrl = _this.updateUrl + "?t=111&g=" + encodeURIComponent(_this.gridKey);
-			if(_this.updateUrl.indexOf('?') > -1){
-				wxUrl = _this.updateUrl + "&t=111&g=" + encodeURIComponent(_this.gridKey);
-			}
-
-	        _this.websocket = new WebSocket(wxUrl);
-
-	        //连接建立时触发
-	        _this.websocket.onopen = function() {
-	        	console.info(locale().websocket.success);
-	        	hideloading();
-				_this.wxErrorCount = 0;
-
-	            //防止websocket长时间不发送消息导致断连
-				_this.retryTimer = setInterval(function(){
-	                _this.websocket.send("rub");
-	            }, 60000);
-	        }
-
-	        //客户端接收服务端数据时触发
-	        _this.websocket.onmessage = function(result){
-				Store.result = result
-				let data = new Function("return " + result.data)();
-        method.createHookFunction('cooperativeMessage', data)
-				console.info(data);
-				let type = data.type;
-				let {message,id} = data;
-				// 用户退出时，关闭协同编辑时其提示框
-				if(message === '用户退出') {
-					$("#luckysheet-multipleRange-show-" + id).hide();
-					Store.cooperativeEdit.changeCollaborationSize = Store.cooperativeEdit.changeCollaborationSize.filter(value => {
-						return value.id != id
-					})
-					Store.cooperativeEdit.checkoutData = Store.cooperativeEdit.checkoutData.filter(value => {
-						return value.id != id
-					})
-				}
-	            if(type == 1){ //send 成功或失败
-                const oldIndex = data.data.v.index;
-                const sheetToUpdate = Store.luckysheetfile.filter((sheet)=> sheet.index === oldIndex)[0];
-                if (sheetToUpdate !== null) {
-                  setTimeout(() => {
-                    const index = data.data.i;
-                    sheetToUpdate.index = index;
-                    Store.currentSheetIndex = index;
-
-                    $(`#luckysheet-sheets-item${oldIndex}`).attr('data-index', index);
-                    $(`#luckysheet-sheets-item${oldIndex}`).prop('id', `luckysheet-sheets-item${index}`);
-                    $(`#luckysheet-datavisual-selection-set-${oldIndex}`).prop('id', `luckysheet-datavisual-selection-set-${index}`);
-                  }, 1);
-                }
-	            }
-	            else if(type == 2){ //更新数据
-	                let item = JSON.parse(data.data);
-					_this.wsUpdateMsg(item);
-					let chang_data = JSON.parse(data.data)
-					if(chang_data.k == 'columnlen') {
-						collaborativeEditBox(chang_data.v,null)
-					} else if(chang_data.k == 'rowlen') {
-						collaborativeEditBox(null,chang_data.v)
-					}
-	            }
-	            else if(type == 3){ //多人操作不同选区("t": "mv")（用不同颜色显示其他人所操作的选区）
-	                let id = data.id;
-	                let username = data.username;
-	                let item = JSON.parse(data.data);
-	                let type = item.t,
-	                    index = item.i,
-	                    value = item.v;
-					if(Store.cooperativeEdit.changeCollaborationSize.length === 0) {
-						Store.cooperativeEdit.changeCollaborationSize.push({id:id,v:item.v[0],i:index})
-					}
-					let flag = Store.cooperativeEdit.changeCollaborationSize.some(value1 => {
-						return value1.id == id
-					})
-					if(flag) {
-						Store.cooperativeEdit.changeCollaborationSize.forEach(val => {
-							if(val.id == id) {
-								val.v = item.v[0]
-								val.i = index
-							}
-						})
-					} else {
-						Store.cooperativeEdit.changeCollaborationSize.push({id:id,v:item.v[0],i:index})
-					}
-	                if(getObjType(value) != "array" && getObjType(value) !== "object"){
-	                    value = JSON.parse(value);
-					}
-					let r = 0
-					let c = 0
-					if(index == Store.currentSheetIndex){//发送消息者在当前页面
-
-						if(getObjType(value) === "object" && value.op === 'enterEdit'){
-							r = value.range[value.range.length - 1].row[0];
-							c = value.range[value.range.length - 1].column[0];
-							_this.multipleRangeShow(id, username, r, c, value.op);
-
-						}else {
-
-							r = value[value.length - 1].row[0];
-							c = value[value.length - 1].column[0];
-
-							_this.multipleRangeShow(id, username, r, c);
-
-						}
-
-					} else {
-						if(getObjType(value) === "object" && value.op === 'enterEdit'){
-							r = value.range[value.range.length - 1].row[0];
-							c = value.range[value.range.length - 1].column[0];
-						}else {
-							r = value[value.length - 1].row[0];
-							c = value[value.length - 1].column[0];
-						}
-					}
-
-					if(Store.cooperativeEdit.checkoutData.length === 0) {
-						if(value.op) {
-							Store.cooperativeEdit.checkoutData.push({id,username,r,c,op:value.op,index})
-						} else {
-							Store.cooperativeEdit.checkoutData.push({id,username,r,c,index})
-						}
-					}
-					let checkoutFlag = Store.cooperativeEdit.checkoutData.some(item => {
-						return item.id == id
-					})
-					if(checkoutFlag) {
-						Store.cooperativeEdit.checkoutData.forEach(item => {
-							if(item.id == id) {
-								item.username = username
-								item.r = r
-								item.c = c
-								item.index = index
-								if (value.op === 'enterEdit') {
-									item.op = value.op
-								}
-							}
-						})
-					} else {
-						if(value.op === 'enterEdit') {
-							Store.cooperativeEdit.checkoutData.push({id,username,r,c,op:value.op,index})
-						} else {
-							Store.cooperativeEdit.checkoutData.push({id,username,r,c,index})
-						}
-					}
-
-					//其他客户端切换页面时
-					Store.cooperativeEdit.checkoutData.forEach(item => {
-						if(item.index != Store.currentSheetIndex) {
-							$("#luckysheet-multipleRange-show-" + item.id).hide();
-							item.op == ''
-						}
-					})
-
-					if($("#luckysheet-multipleRange-show-" + id)[0]) {
-						let change_bottom = $("#luckysheet-multipleRange-show-" + id)[0].offsetHeight - 1
-						$("#luckysheet-multipleRange-show-" + id + ">.username").css({"bottom":change_bottom + 'px'})
-					}
-	            }
-	            else if(type == 4){ //批量指令更新
-					// let items = JSON.parse(data.data);
-
-					// After editing by multiple people, data.data may appear as an empty string
-					let items = data.data === "" ?  data.data : JSON.parse(data.data);
-
-	                for(let i = 0; i < items.length; i++){
-	                    _this.wsUpdateMsg(item[i]);
-	                }
-	            } else if (type == 5) {
-                showloading(data.data);
-              } else if (type == 6) {
-                hideloading();
-              }
-	        }
-
-	        //通信发生错误时触发
-	        _this.websocket.onerror = function(){
-	            _this.wxErrorCount++;
-
-	            if(_this.wxErrorCount > 3){
-	                showloading(locale().websocket.refresh);
-	            }
-	            else{
-	                showloading(locale().websocket.wait);
-	                _this.openWebSocket();
-	            }
-	        }
-
-	        //连接关闭时触发
-	        _this.websocket.onclose = function(e){
-				console.info(locale().websocket.close);
-				if(e.code === 1000){
-					clearInterval(_this.retryTimer)
-					_this.retryTimer = null
-				}else{
-					alert(locale().websocket.contact);
-				}
-	        }
+	      $(`#luckysheet-sheets-item${oldIndex}`).attr(
+		"data-index",
+		index
+	      );
+	      $(`#luckysheet-sheets-item${oldIndex}`).prop(
+		"id",
+		`luckysheet-sheets-item${index}`
+	      );
+	      $(`#luckysheet-datavisual-selection-set-${oldIndex}`).prop(
+		"id",
+		`luckysheet-datavisual-selection-set-${index}`
+	      );
+	    }, 1);
+	  }
+	} else if (type == 2) {
+	  //更新数据
+	  let item = data.data;
+	  _this.wsUpdateMsg(item);
+	  let chang_data = data.data;
+	  if (chang_data.k == "columnlen") {
+	    collaborativeEditBox(chang_data.v, null);
+	  } else if (chang_data.k == "rowlen") {
+	    collaborativeEditBox(null, chang_data.v);
+	  }
+	} else if (type == 3) {
+	  //多人操作不同选区("t": "mv")（用不同颜色显示其他人所操作的选区）
+	  let id = data.id;
+	  let username = data.username;
+	  let item = JSON.parse(data.data);
+	  let type = item.t,
+	    index = item.i,
+	    value = item.v;
+	  if (Store.cooperativeEdit.changeCollaborationSize.length === 0) {
+	    Store.cooperativeEdit.changeCollaborationSize.push({
+	      id: id,
+	      v: item.v[0],
+	      i: index,
+	    });
+	  }
+	  let flag = Store.cooperativeEdit.changeCollaborationSize.some(
+	    (value1) => {
+	      return value1.id == id;
 	    }
-	    else{
-	        alert(locale().websocket.support);
+	  );
+	  if (flag) {
+	    Store.cooperativeEdit.changeCollaborationSize.forEach((val) => {
+	      if (val.id == id) {
+		val.v = item.v[0];
+		val.i = index;
+	      }
+	    });
+	  } else {
+	    Store.cooperativeEdit.changeCollaborationSize.push({
+	      id: id,
+	      v: item.v[0],
+	      i: index,
+	    });
+	  }
+	  if (
+	    getObjType(value) != "array" &&
+	    getObjType(value) !== "object"
+	  ) {
+	    value = JSON.parse(value);
+	  }
+	  let r = 0;
+	  let c = 0;
+	  if (index == Store.currentSheetIndex) {
+	    //发送消息者在当前页面
+
+	    if (
+	      getObjType(value) === "object" &&
+	      value.op === "enterEdit"
+	    ) {
+	      r = value.range[value.range.length - 1].row[0];
+	      c = value.range[value.range.length - 1].column[0];
+	      _this.multipleRangeShow(id, username, r, c, value.op);
+	    } else {
+	      r = value[value.length - 1].row[0];
+	      c = value[value.length - 1].column[0];
+
+	      _this.multipleRangeShow(id, username, r, c);
 	    }
+	  } else {
+	    if (
+	      getObjType(value) === "object" &&
+	      value.op === "enterEdit"
+	    ) {
+	      r = value.range[value.range.length - 1].row[0];
+	      c = value.range[value.range.length - 1].column[0];
+	    } else {
+	      r = value[value.length - 1].row[0];
+	      c = value[value.length - 1].column[0];
+	    }
+	  }
+
+	  if (Store.cooperativeEdit.checkoutData.length === 0) {
+	    if (value.op) {
+	      Store.cooperativeEdit.checkoutData.push({
+		id,
+		username,
+		r,
+		c,
+		op: value.op,
+		index,
+	      });
+	    } else {
+	      Store.cooperativeEdit.checkoutData.push({
+		id,
+		username,
+		r,
+		c,
+		index,
+	      });
+	    }
+	  }
+	  let checkoutFlag = Store.cooperativeEdit.checkoutData.some(
+	    (item) => {
+	      return item.id == id;
+	    }
+	  );
+	  if (checkoutFlag) {
+	    Store.cooperativeEdit.checkoutData.forEach((item) => {
+	      if (item.id == id) {
+		item.username = username;
+		item.r = r;
+		item.c = c;
+		item.index = index;
+		if (value.op === "enterEdit") {
+		  item.op = value.op;
+		}
+	      }
+	    });
+	  } else {
+	    if (value.op === "enterEdit") {
+	      Store.cooperativeEdit.checkoutData.push({
+		id,
+		username,
+		r,
+		c,
+		op: value.op,
+		index,
+	      });
+	    } else {
+	      Store.cooperativeEdit.checkoutData.push({
+		id,
+		username,
+		r,
+		c,
+		index,
+	      });
+	    }
+	  }
+
+	  //其他客户端切换页面时
+	  Store.cooperativeEdit.checkoutData.forEach((item) => {
+	    if (item.index != Store.currentSheetIndex) {
+	      $("#luckysheet-multipleRange-show-" + item.id).hide();
+	      item.op == "";
+	    }
+	  });
+
+	  if ($("#luckysheet-multipleRange-show-" + id)[0]) {
+	    let change_bottom =
+	      $("#luckysheet-multipleRange-show-" + id)[0].offsetHeight - 1;
+	    $("#luckysheet-multipleRange-show-" + id + ">.username").css({
+	      bottom: change_bottom + "px",
+	    });
+	  }
+	} else if (type == 4) {
+	  //批量指令更新
+	  // let items = JSON.parse(data.data);
+
+	  // After editing by multiple people, data.data may appear as an empty string
+	  let items = data.data === "" ? data.data : JSON.parse(data.data);
+
+	  for (let i = 0; i < items.length; i++) {
+	    _this.wsUpdateMsg(item[i]);
+	  }
+	} else if (type == 5) {
+	  showloading(data.data);
+	} else if (type == 6) {
+	  hideloading();
+	}
     },
     wsUpdateMsg: function(item) {
 	    let type = item.t,
