@@ -1,4 +1,3 @@
-import pako from 'pako'
 import { showloading, hideloading } from '../global/loading';
 import { luckysheetrefreshgrid, jfrefreshgrid_rhcw } from '../global/refresh';
 import editor from '../global/editor'

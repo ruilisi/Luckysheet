@@ -30,24 +30,11 @@ import {changeSheetContainerSize, menuToolBarWidth} from './resize';
 import {zoomNumberDomBind} from './zoom';
 import menuButton from './menuButton';
 import method from '../global/method';
+import { v4 as uuidv4 } from 'uuid';
 
 const sheetmanage = {
     generateRandomSheetIndex: function(prefix) {
-        if(prefix == null){
-            prefix = "Sheet";
-        }
-
-        let userAgent = window.navigator.userAgent.replace(/[^a-zA-Z0-9]/g, "").split("");
-
-        let mid = "";
-
-        for(let i = 0; i < 12; i++){
-            mid += userAgent[Math.round(Math.random() * (userAgent.length - 1))];
-        }
-
-        let time = new Date().getTime();
-
-        return prefix + "_" + mid + "_" + time;
+        return uuidv4();
     },
     generateRandomSheetName: function(file, isPivotTable) {
         let index = file.length;
