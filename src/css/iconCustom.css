@@ -1,7 +1,7 @@
 .luckysheet-icon-img-container.iconfont,
 .luckysheet-submenu-arrow .iconfont
 {
-    font-size: 24px;
+    font-size: 24px !important;
 }
 
 .luckysheet-toolbar-menu-button .luckysheet-iconfont-xiayige,
@@ -72,7 +72,7 @@
     padding: 1px 3px;
 } */
 .luckysheet-sheets-add .iconfont, .luckysheet-sheets-m .iconfont{
-    font-size: 21px;
+    font-size: 21px !important;
 }
 
 /* sheet bar left/right scroll */

@@ -89,7 +89,7 @@ const paths = {
     core: ['src/**/*.js','!src/demoData/*.js','src/expendPlugins/**/plugin.js','!src/plugins/js/*.js'],
 
      //plugins src
-    pluginsCss: ['src/plugins/css/*.css'],
+    pluginsCss: ['src/plugins/css/spectrum.min.css'],
     plugins: ['src/plugins/*.css'],
     css:['src/css/*.css','node_modules/flatpickr/dist/themes/light.css'],
     pluginsJs:[
