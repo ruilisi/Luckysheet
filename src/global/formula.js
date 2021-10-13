@@ -4186,7 +4186,7 @@ const luckysheetformula = {
         };
         file.calcChain.push(cc);
 
-        server.saveParam("fc", index, JSON.stringify(cc), {
+        server.saveParam("fc", index, cc, {
             "op": "add",
             "pos": file.calcChain.length - 1
         });
@@ -4262,7 +4262,7 @@ const luckysheetformula = {
             for (let i = 0; i < calcChain.length; i++) {
                 let calc = calcChain[i];
                 if (calc.r == r && calc.c == c && calc.index == index) {
-                    server.saveParam("fc", index, JSON.stringify(calc), {
+                    server.saveParam("fc", index, calc, {
                         "op": "update",
                         "pos": i
                     });
@@ -4295,7 +4295,7 @@ const luckysheetformula = {
         for (let i = 0; i < calcChain.length; i++) {
             let calc = calcChain[i];
             if (calc.r == r && calc.c == c && calc.index == index) {
-                server.saveParam("fc", index, JSON.stringify(calc), {
+                server.saveParam("fc", index, calc, {
                     "op": "update",
                     "pos": i
                 });
@@ -4311,7 +4311,7 @@ const luckysheetformula = {
         calcChain.push(cc);
         file.calcChain = calcChain;
 
-        server.saveParam("fc", index, JSON.stringify(cc), {
+        server.saveParam("fc", index, cc, {
             "op": "add",
             "pos": file.calcChain.length - 1
         });
@@ -5715,7 +5715,7 @@ const luckysheetformula = {
                 updateValue.v = item.v;
                 updateValue.f = item.f;
                 setcellvalue(item.r, item.c, data, updateValue);
-                server.saveParam("v", item.index, item.v, {
+                server.saveParam("v", item.index, data[item.r][item.c], {
                     "r": item.r,
                     "c": item.c
                 });
@@ -5739,7 +5739,7 @@ const luckysheetformula = {
                 let calc = calcChain[i];
                 if (calc.r == r && calc.c == c && calc.index == index) {
                     calcChain.splice(i, 1);
-                    server.saveParam("fc", index, null, {
+                    server.saveParam("fc", index, calc, {
                         "op": "del",
                         "pos": i
                     });

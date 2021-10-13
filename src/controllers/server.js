@@ -591,7 +591,8 @@ const server = {
 
 	        let r = value.r, c = value.c;
 
-	        let calcChain = file["calcChain"] == null ? [] : file["calcChain"];
+		file["calcChain"] ||= []
+	        let calcChain = file["calcChain"];
 
 	        if(op == "add"){
 	            calcChain.push(value);
