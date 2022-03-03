@@ -2116,6 +2116,9 @@ const luckysheetformula = {
         return this.updateparam("r", txt, step);
     },
     functionStrChange: function (txt, type, rc, orient, stindex, step) {
+        if (!txt) {
+            return;
+        }
         let _this = this;
 
         if (_this.operatorjson == null) {

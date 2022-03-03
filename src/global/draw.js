@@ -797,6 +797,10 @@ function luckysheetDrawMain(scrollWidth, scrollHeight, drawWidth, drawHeight, of
 
         let mainCell = Store.flowdata[r][c];
 
+        if (!(mainCell["mc"] && mainCell["mc"].rs)) {
+            continue;
+        }
+
         if (c == 0) {
             start_c = -scrollWidth;
         }
