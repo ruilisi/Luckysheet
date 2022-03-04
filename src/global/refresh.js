@@ -602,6 +602,9 @@ function jfrefreshgrid_adRC(data, cfg, ctrlType, ctrlValue, calc, filterObj, cf,
     file.hyperlink = hyperlink;
     server.saveParam("all", Store.currentSheetIndex, file.hyperlink, { "k": "hyperlink" });
 
+    //tmp: 整张表的数据
+    server.saveParam("cd", Store.currentSheetIndex, sheetmanage.getGridData(file.data));
+
     //行高、列宽刷新
     jfrefreshgrid_rhcw(Store.flowdata.length, Store.flowdata[0].length);
 }
@@ -805,6 +808,9 @@ function jfrefreshgrid_deleteCell(data, cfg, ctrl, calc, filterObj, cf, dataVeri
     hyperlinkCtrl.hyperlink = hyperlink;
     file.hyperlink = hyperlink;
     server.saveParam("all", Store.currentSheetIndex, file.hyperlink, { "k": "hyperlink" });
+
+    //tmp: 整张表的数据
+    server.saveParam("cd", Store.currentSheetIndex, sheetmanage.getGridData(file.data));
 
     refreshCanvasTimeOut = setTimeout(function () {
         luckysheetrefreshgrid();

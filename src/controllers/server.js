@@ -143,11 +143,12 @@ const server = {
 	        // d.s = params.s;
 	    }
 
+	const clonedData = JSON.parse(JSON.stringify(d));
 	    // TODO 配置自定义方式同步图片
         const customImageUpdateMethodConfig = luckysheetConfigsetting.imageUpdateMethodConfig
 		if (JSON.stringify(customImageUpdateMethodConfig) !== "{}") {
             if ("images" != d.k) {
-		method.createHookFunction('op', d)
+		method.createHookFunction('op', clonedData)
             } else {
                 customImageUpdate(customImageUpdateMethodConfig.method, customImageUpdateMethodConfig.url, d)
                     .then((data) => {
@@ -159,7 +160,7 @@ const server = {
 
             }
         } else {
-	    method.createHookFunction('op', d)
+	    method.createHookFunction('op', clonedData)
         }
 
 	},
